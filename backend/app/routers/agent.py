@@ -25,6 +25,85 @@ router = APIRouter(prefix="/api/agent", tags=["agent"])
 MAX_BODY = 2000
 
 
+# --- conversation inbox ------------------------------------------------------
+
+PAGE_SIZE = 50
+
+
+def _last_message(db: Session, conversation_id: str) -> Message | None:
+    return (
+        db.query(Message)
+        .filter(Message.conversation_id == conversation_id)
+        .order_by(Message.created_at.desc())
+        .first()
+    )
+
+
+@router.get("/conversations")
+def list_conversations(
+    status: str | None = None,
+    page: int = 1,
+    agent: Agent = Depends(get_current_agent),
+    db: Session = Depends(get_db),
+) -> dict:
+    q = db.query(Conversation).filter(Conversation.tenant_id == agent.tenant_id)
+    if status:
+        q = q.filter(Conversation.status == status)
+    total = q.count()
+    convs = (
+        q.order_by(Conversation.created_at.desc())
+        .offset((page - 1) * PAGE_SIZE)
+        .limit(PAGE_SIZE + 1)
+        .all()
+    )
+    has_more = len(convs) > PAGE_SIZE
+    convs = convs[:PAGE_SIZE]
+    return {
+        "items": [
+            {
+                "id": c.id,
+                "site_id": c.site_id,
+                "visitor_name": c.visitor_name,
+                "visitor_email": c.visitor_email,
+                "status": c.status,
+                "created_at": c.created_at.isoformat(),
+                "last_message": (
+                    last.body if (last := _last_message(db, c.id)) else None
+                ),
+            }
+            for c in convs
+        ],
+        "has_more": has_more,
+    }
+
+
+@router.get("/conversations/{conversation_id}/messages")
+def conversation_messages(
+    conversation_id: str,
+    page: int = 1,
+    agent: Agent = Depends(get_current_agent),
+    db: Session = Depends(get_db),
+) -> dict:
+    conv = _conv_for_agent(db, agent, conversation_id)
+    q = db.query(Message).filter(Message.conversation_id == conv.id)
+    total = q.count()
+    msgs = (
+        q.order_by(Message.created_at.desc())
+        .offset((page - 1) * PAGE_SIZE)
+        .limit(PAGE_SIZE + 1)
+        .all()
+    )
+    has_more = len(msgs) > PAGE_SIZE
+    msgs = list(reversed(msgs[:PAGE_SIZE]))  # oldest → newest for display
+    return {
+        "items": [
+            {"id": m.id, "sender": m.sender, "body": m.body, "ts": m.created_at.isoformat()}
+            for m in msgs
+        ],
+        "has_more": has_more,
+    }
+
+
 # --- offline captures -------------------------------------------------------
 
 

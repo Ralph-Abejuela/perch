@@ -68,8 +68,14 @@ async def subscribe_tenant(tenant_id: str) -> AsyncIterator[dict]:
         await pubsub.aclose()
 
 
-async def allow_message(site_key: str, visitor_id: str, limit: int = 30, window_s: int = 60) -> bool:
-    """Sliding-window-ish fixed counter: limit messages per visitor per site."""
+async def allow_message(
+    site_key: str,
+    visitor_id: str,
+    limit: int | None = None,
+    window_s: int = 60,
+) -> bool:
+    """Fixed-window counter: limit messages per visitor per site."""
+    limit = limit or settings.rate_limit_per_minute
     r = get_redis()
     key = f"perch:rl:{site_key}:{visitor_id}"
     count = await r.incr(key)
