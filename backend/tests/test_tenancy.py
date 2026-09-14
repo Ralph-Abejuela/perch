@@ -33,6 +33,7 @@ def test_tenant_b_cannot_see_tenant_a_sites(client):
 
 def test_site_keys_are_unique(client):
     signup(client, "keys@example.com", tenant="Keys")
+    client.post("/api/agent/settings/plan", json={"plan": "pro"})
     k1 = _create_site(client, "one")["key"]
     k2 = _create_site(client, "two")["key"]
     assert k1 != k2
