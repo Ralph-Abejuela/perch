@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
+from ..config import settings
 from ..db import get_db
 from ..deps import COOKIE_NAME, get_current_agent
 from ..models import Agent, Tenant
@@ -16,8 +17,8 @@ def _set_session_cookie(response: Response, agent: Agent) -> None:
         COOKIE_NAME,
         token,
         httponly=True,
-        samesite="lax",
-        secure=False,  # set to true behind TLS in production
+        samesite=settings.cookie_samesite,
+        secure=settings.cookie_secure,
         max_age=60 * 60 * 24 * 7,
         path="/",
     )

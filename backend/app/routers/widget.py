@@ -10,8 +10,8 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from ..db import SessionLocal, get_db
-from ..models import Conversation, Message, Site
-from ..realtime import allow_message, publish, subscribe
+from ..models import Conversation, Message, OfflineCapture, Site
+from ..realtime import allow_message, online_agents, publish_event, publish_tenant, subscribe
 
 router = APIRouter(prefix="/api/widget", tags=["widget"])
 
@@ -66,6 +66,12 @@ def config(site_key: str, db: Session = Depends(get_db)) -> dict:
     return {"site_id": site.id, "site_name": site.name}
 
 
+@router.get("/{site_key}/status")
+async def status(site_key: str, db: Session = Depends(get_db)) -> dict:
+    site = _site(db, site_key)
+    return {"agents_online": await online_agents(site.tenant_id) > 0}
+
+
 @router.post("/{site_key}/conversations", status_code=201)
 def start_conversation(site_key: str, body: VisitorInfo, db: Session = Depends(get_db)) -> dict:
     site = _site(db, site_key)
@@ -114,8 +120,40 @@ async def send_message(
     db.add(msg)
     db.commit()
     event = _message_out(msg)
-    await publish(conv.id, event)
+    event["conversation_id"] = conv.id
+    await publish_event(conv.tenant_id, conv.id, event)
     return event
+
+
+class OfflineCaptureIn(BaseModel):
+    visitor_id: str
+    email: str = Field(min_length=3, max_length=320)
+    body: str = Field(min_length=1, max_length=MAX_BODY)
+
+
+@router.post("/{site_key}/offline", status_code=201)
+async def offline_capture(site_key: str, body: OfflineCaptureIn, db: Session = Depends(get_db)) -> dict:
+    site = _site(db, site_key)
+    vid = _visitor_id(body.visitor_id)
+    if not await allow_message(site.key, vid):
+        raise HTTPException(status_code=429, detail="Too many messages, slow down")
+    capture = OfflineCapture(
+        tenant_id=site.tenant_id, site_id=site.id, visitor_id=vid, email=body.email, body=body.body
+    )
+    db.add(capture)
+    db.commit()
+    await publish_tenant(
+        site.tenant_id,
+        {
+            "type": "capture",
+            "id": capture.id,
+            "site_id": site.id,
+            "email": capture.email,
+            "body": capture.body,
+            "ts": capture.created_at.isoformat(),
+        },
+    )
+    return {"id": capture.id}
 
 
 @router.websocket("/{site_key}/ws")
@@ -156,9 +194,13 @@ async def visitor_ws(websocket: WebSocket, site_key: str, visitor_id: str, conve
                 )
                 db.add(msg)
                 db.commit()
-                await publish(conv.id, _message_out(msg))
+                event = _message_out(msg)
+                event["conversation_id"] = conv.id
+                await publish_event(conv.tenant_id, conv.id, event)
             elif kind == "typing":
-                await publish(conv.id, {"type": "typing", "sender": "visitor"})
+                await publish_event(
+                    conv.tenant_id, conv.id, {"type": "typing", "sender": "visitor", "conversation_id": conv.id}
+                )
             elif kind == "identify":
                 conv.visitor_name = str(data.get("name") or "")[:200] or None
                 conv.visitor_email = str(data.get("email") or "")[:320] or None

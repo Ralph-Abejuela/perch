@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 60 * 24 * 7
 
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    cookie_samesite: str = "lax"  # "none" when dashboard and API are cross-site (behind TLS)
+    cookie_secure: bool = False
 
     model_config = {"env_prefix": "PERCH_"}
 
