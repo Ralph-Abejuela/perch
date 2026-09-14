@@ -11,6 +11,14 @@ def utcnow() -> datetime:
     return datetime.now(UTC)
 
 
+class Plan(Base):
+    __tablename__ = "plans"
+
+    name: Mapped[str] = mapped_column(String(20), primary_key=True)
+    max_sites: Mapped[int | None] = mapped_column(nullable=True)  # None = unlimited
+    max_agents: Mapped[int | None] = mapped_column(nullable=True)
+
+
 class Tenant(Base):
     __tablename__ = "tenants"
 

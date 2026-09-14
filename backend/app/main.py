@@ -5,14 +5,27 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
 from .db import Base, engine
-from .routers import agent, auth, sites, widget
+from .routers import agent, auth, settings as settings_router, sites, widget
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # v1: create_all is enough; switch to Alembic when migrations matter.
     Base.metadata.create_all(bind=engine)
+    _seed_plans()
     yield
+
+
+def _seed_plans() -> None:
+    from sqlalchemy.orm import Session
+
+    from .models import Plan
+
+    with Session(engine) as db:
+        for name, max_sites, max_agents in [("free", 1, 2), ("pro", None, None)]:
+            if db.get(Plan, name) is None:
+                db.add(Plan(name=name, max_sites=max_sites, max_agents=max_agents))
+        db.commit()
 
 
 app = FastAPI(title="Perch", version="0.1.0", lifespan=lifespan)
@@ -30,6 +43,7 @@ app.include_router(auth.router)
 app.include_router(sites.router)
 app.include_router(widget.router)
 app.include_router(agent.router)
+app.include_router(settings_router.router)
 
 
 @app.get("/health")

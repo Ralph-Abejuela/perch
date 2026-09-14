@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..deps import get_current_agent
-from ..models import Agent, Site
+from ..models import Agent, Plan, Site, Tenant
 from ..schemas import SiteCreate, SiteOut
 from ..scoping import ScopedQuery
 
@@ -12,6 +12,17 @@ router = APIRouter(prefix="/api/sites", tags=["sites"])
 
 def scoped(agent: Agent, db: Session) -> ScopedQuery:
     return ScopedQuery(db, agent.tenant_id)
+
+
+def _check_site_limit(agent: Agent, db: Session) -> None:
+    plan = db.get(Plan, db.get(Tenant, agent.tenant_id).plan)  # type: ignore[union-attr]
+    if plan and plan.max_sites is not None:
+        count = db.query(Site).filter(Site.tenant_id == agent.tenant_id).count()
+        if count >= plan.max_sites:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Plan limit reached: {plan.name} allows {plan.max_sites} site(s). Upgrade to Pro for unlimited.",
+            )
 
 
 @router.get("", response_model=list[SiteOut])
@@ -28,6 +39,7 @@ def create_site(
     agent: Agent = Depends(get_current_agent),
     db: Session = Depends(get_db),
 ) -> SiteOut:
+    _check_site_limit(agent, db)
     site = Site(tenant_id=agent.tenant_id, name=body.name)
     scoped(agent, db).add(site)
     db.commit()
