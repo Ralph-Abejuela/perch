@@ -42,3 +42,27 @@ class Site(Base):
     # Public identifier embedded in the widget snippet; not secret by itself.
     key: Mapped[str] = mapped_column(String(64), default=lambda: secrets.token_urlsafe(24))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Conversation(Base):
+    __tablename__ = "conversations"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: secrets.token_hex(16))
+    tenant_id: Mapped[str] = mapped_column(String(36), ForeignKey("tenants.id"), index=True)
+    site_id: Mapped[str] = mapped_column(String(36), ForeignKey("sites.id"), index=True)
+    visitor_id: Mapped[str] = mapped_column(String(64), index=True)
+    visitor_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    visitor_email: Mapped[str | None] = mapped_column(String(320), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="open")  # open | closed
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Message(Base):
+    __tablename__ = "messages"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: secrets.token_hex(16))
+    tenant_id: Mapped[str] = mapped_column(String(36), ForeignKey("tenants.id"), index=True)
+    conversation_id: Mapped[str] = mapped_column(String(36), ForeignKey("conversations.id"), index=True)
+    sender: Mapped[str] = mapped_column(String(10))  # visitor | agent
+    body: Mapped[str] = mapped_column(String(2000))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
