@@ -1,0 +1,40 @@
+name: Release (Docker Hub)
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: |
+            frontend/pnpm-lock.yaml
+            widget/pnpm-lock.yaml
+      - run: pnpm install --prefix widget --frozen-lockfile
+      - run: pnpm run --prefix widget build
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/perch:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/perch:${{ github.ref_name }}

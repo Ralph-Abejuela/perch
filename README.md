@@ -26,10 +26,28 @@ docker compose up --build
 ## Self-hosting
 
 ```sh
+cp .env.example .env        # set PERCH_JWT_SECRET!
 docker compose up -d
 ```
 
-Services: `app` (FastAPI), `db` (Postgres 16), `redis` (Redis 7), and an optional `cloudflared` service for exposing the backend through a Cloudflare Tunnel (see `docker-compose.yml`).
+Services: `app` (FastAPI, port 8000), `db` (Postgres 16), `redis` (Redis 7), and an optional `cloudflared` service for exposing the backend through a Cloudflare Tunnel (see `docker-compose.yml`).
+
+Then:
+
+1. Open `http://localhost:8000/docs` to verify, and deploy the dashboard (`frontend/dist`) to any static host pointing at your API origin.
+2. Sign up, create a Site, and embed the widget:
+
+```html
+<script src="https://your-api-origin/widget.js" data-site-key="YOUR_SITE_KEY" data-api="https://your-api-origin"></script>
+```
+
+The API serves the widget bundle itself at `/widget.js` — no separate hosting needed.
+
+If the dashboard is hosted on a different domain, set `PERCH_CORS_ORIGINS`, `PERCH_COOKIE_SAMESITE=none`, and `PERCH_COOKIE_SECURE=true` (TLS required).
+
+## Releases
+
+GitHub Actions runs pytest on every push and publishes the Docker image to Docker Hub on `v*` tags (requires `DOCKERHUB_USERNAME` / `DOCKERHUB_TOKEN` repo secrets).
 
 ## Layout
 

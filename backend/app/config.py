@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     cookie_samesite: str = "lax"  # "none" when dashboard and API are cross-site (behind TLS)
     cookie_secure: bool = False
     rate_limit_per_minute: int = 30
+    widget_js_path: str = "/app/widget/perch.js"
 
     model_config = {"env_prefix": "PERCH_"}
 

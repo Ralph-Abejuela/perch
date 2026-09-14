@@ -1,9 +1,19 @@
 services:
   app:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: ralphabejuela/perch:latest
     environment:
       PERCH_DATABASE_URL: postgresql+psycopg://perch:perch@db:5432/perch
       PERCH_REDIS_URL: redis://redis:6379/0
+      # Change this to a long random string in production!
+      PERCH_JWT_SECRET: ${PERCH_JWT_SECRET:-dev-secret-change-me}
+      # When the dashboard is on a different domain (e.g. Cloudflare Pages),
+      # set PERCH_CORS_ORIGINS to that origin and PERCH_COOKIE_SAMESITE=none.
+      PERCH_CORS_ORIGINS: ${PERCH_CORS_ORIGINS:-http://localhost:5173}
+      PERCH_COOKIE_SAMESITE: ${PERCH_COOKIE_SAMESITE:-lax}
+      PERCH_COOKIE_SECURE: ${PERCH_COOKIE_SECURE:-false}
     ports:
       - "8000:8000"
     depends_on:
@@ -29,7 +39,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379" # exposed for local backend/tests; remove in production
+      - "6379:6379" # exposed for local dev/tests; remove in production
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s

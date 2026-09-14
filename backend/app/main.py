@@ -1,7 +1,9 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 from .config import settings
 from .db import Base, engine
@@ -49,3 +51,17 @@ app.include_router(settings_router.router)
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/widget.js", include_in_schema=False)
+def widget_js() -> FileResponse:
+    """Serve the built widget bundle so the embed snippet only needs the API origin."""
+    candidates = [
+        Path(settings.widget_js_path),
+        Path.cwd() / "widget.js",
+        Path.cwd().parent / "widget" / "dist" / "perch.js",
+    ]
+    for path in candidates:
+        if path.is_file():
+            return FileResponse(path, media_type="application/javascript")
+    raise FileNotFoundError("widget bundle not built; run `pnpm build` in widget/")
