@@ -3,7 +3,8 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    image: ralphabejuela/perch:latest
+    # Override with PERCH_IMAGE=<dockerhub-user>/perch:latest if you publish your own build.
+    image: ${PERCH_IMAGE:-ralphabejuela/perch:latest}
     environment:
       PERCH_DATABASE_URL: postgresql+psycopg://perch:perch@db:5432/perch
       PERCH_REDIS_URL: redis://redis:6379/0
