@@ -18,17 +18,6 @@ def require_redis():
         pytest.skip("Redis not available on localhost:6379/15")
 
 
-@pytest.fixture(autouse=True)
-def fresh_redis_client():
-    # The cached async redis client binds to one event loop; TestClient creates
-    # a new loop per test, so drop the cache between tests.
-    import app.realtime as rt
-
-    rt._redis = None
-    yield
-    rt._redis = None
-
-
 def _conv(client, site_key: str) -> str:
     r = client.post(f"/api/widget/{site_key}/conversations", json={"visitor_id": VID})
     assert r.status_code == 201
