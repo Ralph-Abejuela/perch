@@ -2,12 +2,42 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Perch widget demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Perch demo</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 640px; margin: 10vh auto; padding: 0 20px; color: #1c1c1c; }
+      code { background: #f1f3f4; padding: 2px 6px; border-radius: 6px; }
+    </style>
   </head>
   <body>
-    <h1>Demo site</h1>
-    <p>This page embeds the Perch widget. Create a Site in the dashboard, then paste its key below.</p>
-    <!-- Replace the data-site-key with a key from your Perch dashboard. -->
-    <script src="../dist/perch.js" data-site-key="PASTE_SITE_KEY" data-api="http://localhost:8000"></script>
+    <h1>This page has a Perch widget on it 💬</h1>
+    <p>
+      Click the chat bubble in the corner. Agents reply in the
+      <a href="/" id="dashboard">dashboard</a>. If no agent is online you'll get the
+      offline form instead — that's the point.
+    </p>
+    <script>
+      // Demo page reads its config from the URL so the same static build works
+      // for any site key:  https://demo.example.com/?site=KEY&api=https://api.example.com
+      const params = new URLSearchParams(location.search);
+      const siteKey = params.get("site");
+      const api = params.get("api") || location.origin;
+
+      const dash = document.getElementById("dashboard");
+      dash.href = params.get("dashboard") || "/";
+
+      if (!siteKey) {
+        document.body.insertAdjacentHTML(
+          "beforeend",
+          "<p><b>Setup:</b> append <code>?site=YOUR_SITE_KEY</code> to this page's URL.</p>",
+        );
+      } else {
+        const s = document.createElement("script");
+        s.src = `${api}/widget.js`;
+        s.dataset.siteKey = siteKey;
+        s.dataset.api = api;
+        document.body.appendChild(s);
+      }
+    </script>
   </body>
 </html>

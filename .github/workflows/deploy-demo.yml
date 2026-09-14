@@ -1,0 +1,45 @@
+name: Deploy demo (Cloudflare Pages)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  DASHBOARD_PROJECT: ${{ secrets.PAGES_DASHBOARD_PROJECT || 'perch-dashboard' }}
+  DEMO_PROJECT: ${{ secrets.PAGES_DEMO_PROJECT || 'perch-demo' }}
+
+jobs:
+  pages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Build dashboard
+        run: |
+          pnpm install --prefix frontend --frozen-lockfile
+          pnpm run --prefix frontend build
+
+      - name: Deploy dashboard to Cloudflare Pages
+        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy frontend/dist --project-name=${{ env.DASHBOARD_PROJECT }}
+
+      - name: Deploy demo landing to Cloudflare Pages
+        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy widget/demo --project-name=${{ env.DEMO_PROJECT }}

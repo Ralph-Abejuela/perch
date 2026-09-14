@@ -9,6 +9,10 @@ Self-hostable live chat widget. A business (Tenant) embeds a widget on their web
 - One Docker image, self-hostable via `docker compose up`
 - AGPL-3.0
 
+## Demo
+
+The live demo topology (Pages + Tunnel + VPS) and every deploy step are documented in [docs/deploy-demo.md](./docs/deploy-demo.md).
+
 ## Status
 
 v1 in development. See [CONTEXT.md](./CONTEXT.md) for the domain glossary and [docs/adr/](./docs/adr/) for architecture decisions.
