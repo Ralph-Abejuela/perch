@@ -1,0 +1,48 @@
+services:
+  app:
+    build: ./backend
+    environment:
+      PERCH_DATABASE_URL: postgresql+psycopg://perch:perch@db:5432/perch
+      PERCH_REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: perch
+      POSTGRES_PASSWORD: perch
+      POSTGRES_DB: perch
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U perch"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Optional: expose the backend through a Cloudflare Tunnel instead of open ports.
+  # Set CLOUDFLARE_TUNNEL_TOKEN in your environment or .env file.
+  # cloudflared:
+  #   image: cloudflare/cloudflared:latest
+  #   command: tunnel run
+  #   environment:
+  #     TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+  #   depends_on:
+  #     - app
+
+volumes:
+  pgdata:
