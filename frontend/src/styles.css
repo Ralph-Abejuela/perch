@@ -43,6 +43,9 @@ aside { background: #fff; border-right: 1px solid #e5e7ea; overflow-y: auto; }
 .chat input { flex: 1; border: 0; }
 
 .pane { padding: 20px; max-width: 760px; }
+.card.wide { width: 100%; max-width: 760px; }
+.card .plan-name { font-size: 18px; letter-spacing: 1px; }
+.notice { color: #14724e; }
 .pane .row { justify-content: flex-start; }
 .list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .list li { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; background: #fff; padding: 14px 16px; border-radius: 10px; border: 1px solid #e5e7ea; }

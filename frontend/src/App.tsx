@@ -4,8 +4,9 @@ import Login from "./Login";
 import Conversations from "./Conversations";
 import Sites from "./Sites";
 import Captures from "./Captures";
+import Settings from "./Settings";
 
-type Tab = "conversations" | "sites" | "captures";
+type Tab = "conversations" | "sites" | "captures" | "settings";
 
 export default function App() {
   const [me, setMe] = useState<Me | null>(null);
@@ -30,7 +31,7 @@ export default function App() {
         <strong>Perch</strong>
         <span className="muted">{me.tenant_name} · {me.tenant_plan}</span>
         <nav>
-          {(["conversations", "sites", "captures"] as Tab[]).map((t) => (
+          {(["conversations", "sites", "captures", "settings"] as Tab[]).map((t) => (
             <button key={t} className={tab === t ? "active" : ""} onClick={() => setTab(t)}>
               {t}
             </button>
@@ -50,6 +51,7 @@ export default function App() {
         {tab === "conversations" && <Conversations />}
         {tab === "sites" && <Sites />}
         {tab === "captures" && <Captures />}
+        {tab === "settings" && <Settings isOwner={me.is_owner} />}
       </main>
     </div>
   );
