@@ -66,3 +66,16 @@ class Message(Base):
     sender: Mapped[str] = mapped_column(String(10))  # visitor | agent
     body: Mapped[str] = mapped_column(String(2000))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class OfflineCapture(Base):
+    __tablename__ = "offline_captures"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: secrets.token_hex(16))
+    tenant_id: Mapped[str] = mapped_column(String(36), ForeignKey("tenants.id"), index=True)
+    site_id: Mapped[str] = mapped_column(String(36), ForeignKey("sites.id"), index=True)
+    visitor_id: Mapped[str] = mapped_column(String(64))
+    email: Mapped[str] = mapped_column(String(320))
+    body: Mapped[str] = mapped_column(String(2000))
+    resolved: Mapped[bool] = mapped_column(default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
