@@ -68,11 +68,13 @@ def test_visitor_cannot_read_other_conversation(client):
 
 
 def test_rate_limit(client):
+    from app.config import settings
+
     key = make_site(client)
     conv_id = _conv(client, key)
 
     last = None
-    for _ in range(30):
+    for _ in range(settings.rate_limit_per_minute):
         last = client.post(
             f"/api/widget/{key}/conversations/{conv_id}/messages",
             json={"visitor_id": VID, "body": "spam"},

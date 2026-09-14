@@ -6,6 +6,7 @@ import uuid
 _TMP = tempfile.mkdtemp(prefix="perch-test-")
 os.environ["PERCH_DATABASE_URL"] = f"sqlite:///{_TMP}/perch-test.db"
 os.environ["PERCH_REDIS_URL"] = "redis://127.0.0.1:6379/15"
+os.environ["PERCH_RATE_LIMIT_PER_MINUTE"] = "300"  # pagination tests send 55+ messages
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
