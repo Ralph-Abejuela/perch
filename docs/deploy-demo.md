@@ -13,7 +13,7 @@ browser ─ pages.dev (dashboard, demo page)
 
 ```sh
 # on the VPS (Ubuntu, Docker + compose plugin installed)
-git clone https://github.com/ralph-abejuela/perch.git && cd perch
+git clone https://github.com/Ralph-Abejuela/perch.git && cd perch
 cp .env.example .env
 # edit .env: set PERCH_JWT_SECRET to a long random string
 ```
